@@ -1,0 +1,207 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>ROS2-serial-串口通信 | 树码空间</title><meta name="author" content="TreeX-X"><meta name="copyright" content="TreeX-X"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="PS：本文需要的先行知识请自行补充本文通过移植serial功能包，实现了部署于ROS2中的串口通讯 环境部署调试工具测试环境 ：VMware + Ubuntu 22.04.2 LTS + ROS2-humble 带界面的串口调试助手 CuteCom ：sudo apt-get install cutecom 虚拟串口模拟器 socat：sudo apt-get install socat 1234">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ROS2-serial-串口通信">
+<meta property="og:url" content="https://treex-x.github.io/2024/01/30/ROS2-NO.2/index.html">
+<meta property="og:site_name" content="树码空间">
+<meta property="og:description" content="PS：本文需要的先行知识请自行补充本文通过移植serial功能包，实现了部署于ROS2中的串口通讯 环境部署调试工具测试环境 ：VMware + Ubuntu 22.04.2 LTS + ROS2-humble 带界面的串口调试助手 CuteCom ：sudo apt-get install cutecom 虚拟串口模拟器 socat：sudo apt-get install socat 1234">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://treex-x.github.io/img/Tree.gif">
+<meta property="article:published_time" content="2024-01-30T04:00:00.377Z">
+<meta property="article:modified_time" content="2024-02-01T09:26:56.048Z">
+<meta property="article:author" content="TreeX-X">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://treex-x.github.io/img/Tree.gif"><link rel="shortcut icon" href="/img/tree.png"><link rel="canonical" href="https://treex-x.github.io/2024/01/30/ROS2-NO.2/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.12.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'ROS2-serial-串口通信',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-02-01 17:26:56'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><meta name="generator" content="Hexo 7.0.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="/img/Tree.gif" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background: linear-gradient(20deg, #0062be, #925696, #cc426e, #fb0347)"><nav id="nav"><span id="blog-info"><a href="/" title="树码空间"><span class="site-name">树码空间</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">ROS2-serial-串口通信</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-01-30T04:00:00.377Z" title="发表于 2024-01-30 12:00:00">2024-01-30</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2024-02-01T09:26:56.048Z" title="更新于 2024-02-01 17:26:56">2024-02-01</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E2%80%94ROS2/">—ROS2</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="ROS2-serial-串口通信"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>PS：本文需要的先行知识请自行补充<br>本文通过移植serial功能包，实现了部署于ROS2中的串口通讯</p>
+<h1 id="环境部署"><a href="#环境部署" class="headerlink" title="环境部署"></a>环境部署</h1><h2 id="调试工具"><a href="#调试工具" class="headerlink" title="调试工具"></a>调试工具</h2><p>测试环境 ：VMware + Ubuntu 22.04.2 LTS + ROS2-humble</p>
+<p>带界面的串口调试助手 CuteCom ：<code>sudo apt-get install cutecom</code></p>
+<p>虚拟串口模拟器 socat：<code>sudo apt-get install socat</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">虚拟串口生成 `socat -d -d pty,b115200 pty,b115200`</span><br><span class="line"></span><br><span class="line">-d：启用调试输出</span><br><span class="line"></span><br><span class="line">pty：生成伪终端</span><br><span class="line"></span><br><span class="line">raw：使数据保存原始模式</span><br><span class="line"></span><br><span class="line">echo = 0：禁用输入字符的回显</span><br><span class="line"></span><br><span class="line">b“115200”：设置波特率为 “115200”</span><br></pre></td></tr></table></figure>
+<p>观察日志，会返回两个虚拟串口对，不同的设备生成的串口名称可能每次都会不一样，输出格式例：&#x2F;dev&#x2F;pts&#x2F;4 和 &#x2F;dev&#x2F;pts&#x2F;5；且终端需要一直开启，虚拟串口才会保持有效；</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cat &lt; /dev/pts/4   监听/dev/pts/4的数据</span><br><span class="line"></span><br><span class="line">sudo echo &quot;Tree&quot; &gt; /dev/pts/5  通过/dev/pts/5向/dev/pts/4发送数据&quot;Tree&quot;</span><br></pre></td></tr></table></figure>
+
+
+<h2 id="serial安装"><a href="#serial安装" class="headerlink" title="serial安装"></a>serial安装</h2><p>Github：<a target="_blank" rel="noopener" href="https://github.com/ZhaoXiangBox/serial">https://github.com/ZhaoXiangBox/serial</a></p>
+<p>截止2024-1：</p>
+<p>在ROS1中可以直接安装官方提供的serial库，直接可用APT下载</p>
+<p>而在ROS2中需要自行下载源码移植</p>
+<p>安装ROS2-serial-driver：sudo apt install ros-humble-serial-driver</p>
+<p>Git下载源码：<br><code>git clone https://github.com/ZhaoXiangBox/serial.git</code></p>
+<p>编译源码：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd serial</span><br><span class="line">mkdir build</span><br><span class="line"></span><br><span class="line">cd build</span><br><span class="line">camke .. &amp; make -j</span><br></pre></td></tr></table></figure>
+<p>这里不直接编译 install 文件，可以放到功能包后在编译;</p>
+<h2 id="serial使用"><a href="#serial使用" class="headerlink" title="serial使用"></a>serial使用</h2><p>官网：<a target="_blank" rel="noopener" href="http://wjwwood.io/serial/doc/1.1.0/index.html">http://wjwwood.io/serial/doc/1.1.0/index.html</a></p>
+<p>与ROS1中的serial使用方式一致</p>
+<p>安装的serial是可支持ROS - humble的</p>
+<p>1、首先我们需要添加serial的头文件</p>
+<p><code>#include &quot;serial/serial.h&quot;</code></p>
+<p>2、相关初始化</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">serial::Serial ser;</span><br><span class="line">serial::Timeout to = serial::Timeout::simpleTimeout(1000); #方法设置超时时间为1000毫秒（1秒）</span><br><span class="line">serial::parity_t pt = serial::parity_t::parity_none; #表示不使用奇偶校验</span><br><span class="line">serial::bytesize_t bt =  serial::bytesize_t::eightbits; #表示每个字节包含8位</span><br><span class="line">serial::flowcontrol_t ft = serial::flowcontrol_t::flowcontrol_none; #表示不使用流控制</span><br><span class="line">serial::stopbits_t st = serial::stopbits_t::stopbits_one; #表示每个字节后面有1个停止位</span><br><span class="line"></span><br><span class="line">ser.setPort(&quot;/dev/ttyS0&quot;);</span><br><span class="line">ser.setBaudrate(115200);</span><br><span class="line">ser.setTimeout(to);</span><br><span class="line">ser.setParity(pt);  # 设置奇偶校验</span><br><span class="line">ser.setBytesize(bt); #设置字节大小</span><br><span class="line">ser.setFlowcontrol(ft); #设置流控制</span><br><span class="line">ser.setStopbits(st); #设置停止位</span><br></pre></td></tr></table></figure>
+<p>3、开启串口</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">try</span><br><span class="line">&#123;</span><br><span class="line">    ser.open();</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line">catch(const std::exception &amp;e)</span><br><span class="line">&#123;</span><br><span class="line">    ROS_ERROR_STREAM(&quot;Unable to open port.&quot;);</span><br><span class="line">    return -1;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">if(ser.isOpen())</span><br><span class="line">&#123;</span><br><span class="line">    ROS_INFO_STREAM(&quot;Serial Port is opende.\n&quot;);</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line">else </span><br><span class="line">&#123;</span><br><span class="line">    return -1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>4、读写操作</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ser.read(ser.available());</span><br><span class="line"></span><br><span class="line">ser.write(msg.c_str());</span><br></pre></td></tr></table></figure>
+
+<p>以上均可结合测试环境和虚拟串口模拟器 socat 进行测试或验证代码</p>
+<h1 id="ROS-实现串口收发"><a href="#ROS-实现串口收发" class="headerlink" title="ROS 实现串口收发"></a>ROS 实现串口收发</h1><p>工程环境：RK3588 + Ubuntu 22.04.2 LTS + ROS2-humble</p>
+<p>默认工作空间已建立，环境变量已导入脚本；</p>
+<p>创建功能包：<br><code>ros2 pkg create &lt;package-name&gt;  --build-type  &#123;cmake,ament_cmake,ament_python&#125;  --dependencies &lt;依赖名字&gt;</code></p>
+<h2 id="代码设计"><a href="#代码设计" class="headerlink" title="代码设计"></a>代码设计</h2><p>以下仅贴部分代码作演示：</p>
+<p>发布者myserial_pub.cpp：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">#include &quot;rclcpp/rclcpp.hpp&quot;</span><br><span class="line">#include &quot;std_msgs/msg/string.hpp&quot;</span><br><span class="line">#include &lt;serial/serial.h&gt;</span><br><span class="line"></span><br><span class="line">#define BAUDRATE 115200</span><br><span class="line"></span><br><span class="line">class tree_node : public rclcpp::Node</span><br><span class="line">&#123;</span><br><span class="line">public:</span><br><span class="line">    tree_node(const std::string&amp; name):Node(name)</span><br><span class="line">    &#123;</span><br><span class="line">        RCLCPP_INFO(this-&gt;get_logger(),&quot;This is Tree&#x27;s Test&quot;);</span><br><span class="line"></span><br><span class="line">        serial_publisher_ = this-&gt;create_publisher&lt;std_msgs::msg::String&gt;(&quot;serial_msg&quot;,10);</span><br><span class="line"></span><br><span class="line">        timer_ = this-&gt;create_wall_timer(std::chrono::milliseconds(1000), std::bind(&amp;tree_node::timer_callback, this));</span><br><span class="line"></span><br><span class="line">        serial_Init();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">private:</span><br><span class="line"></span><br><span class="line">    void timer_callback()</span><br><span class="line">    &#123;</span><br><span class="line">        std_msgs::msg::String message;</span><br><span class="line"> </span><br><span class="line">        message.data = &quot;tree_test\r\n&quot;;</span><br><span class="line"></span><br><span class="line">        RCLCPP_INFO(this-&gt;get_logger(),&quot;Publisher:&#x27;%s&#x27;&quot;,message.data.c_str());</span><br><span class="line"></span><br><span class="line">        // ros_ser.write(message.data.c_str());</span><br><span class="line"></span><br><span class="line">        serial_publisher_-&gt;publish(message);</span><br><span class="line"></span><br><span class="line">        size_t n = ros_ser.available();</span><br><span class="line">        if(n!=0)</span><br><span class="line">        &#123;</span><br><span class="line">            std_msgs::msg::String msg_s;</span><br><span class="line">            msg_s.data = ros_ser.read(ros_ser.available());</span><br><span class="line">            serial_publisher_-&gt;publish(msg_s);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  </span><br><span class="line"></span><br><span class="line">    void serial_Init()</span><br><span class="line">    &#123;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    serial::Timeout to = serial::Timeout::simpleTimeout(1000);</span><br><span class="line">    serial::parity_t pt = serial::parity_t::parity_none;</span><br><span class="line">    serial::bytesize_t bt =  serial::bytesize_t::eightbits;</span><br><span class="line">    serial::flowcontrol_t ft = serial::flowcontrol_t::flowcontrol_none;</span><br><span class="line">    serial::stopbits_t st = serial::stopbits_t::stopbits_one;</span><br><span class="line"></span><br><span class="line">   </span><br><span class="line">    ros_ser.setPort(&quot;/dev/ttyS0&quot;);</span><br><span class="line">    // ros_ser.setPort(&quot;/dev/pts/5&quot;); //TEST</span><br><span class="line">    ros_ser.setBaudrate(BAUDRATE);</span><br><span class="line">    ros_ser.setTimeout(to);</span><br><span class="line">    ros_ser.setParity(pt);</span><br><span class="line">    ros_ser.setBytesize(bt);</span><br><span class="line">    ros_ser.setFlowcontrol(ft);</span><br><span class="line">    ros_ser.setStopbits(st);</span><br><span class="line"></span><br><span class="line">    try</span><br><span class="line">    &#123;</span><br><span class="line">        ros_ser.open();</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    catch(const std::exception &amp;e)</span><br><span class="line">    &#123;</span><br><span class="line">        RCLCPP_ERROR(this-&gt;get_logger(), &quot;Failed to open the serial port.&quot;);</span><br><span class="line">        // return -1;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#125; </span><br><span class="line">    </span><br><span class="line">    serial::Serial ros_ser;</span><br><span class="line"></span><br><span class="line">    rclcpp::TimerBase::SharedPtr timer_;</span><br><span class="line"></span><br><span class="line">    rclcpp::Publisher&lt;std_msgs::msg::String&gt;::SharedPtr serial_publisher_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">int main(int argc, char **argv)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    // auto logger = rclcpp::get_logger(&quot;my_logger&quot;);  </span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    rclcpp::init(argc,argv);</span><br><span class="line">    auto node = std::make_shared&lt;tree_node&gt;(&quot;tree_new_node&quot;);</span><br><span class="line"></span><br><span class="line">    rclcpp::spin(node);</span><br><span class="line"></span><br><span class="line">    rclcpp::shutdown();</span><br><span class="line">    return 0;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p>订阅者myserial_sub.cpp:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">class serial_sub_node : public rclcpp::Node</span><br><span class="line">&#123;</span><br><span class="line">    public:</span><br><span class="line">        serial_sub_node(std::string name) : Node(name)</span><br><span class="line">        &#123;</span><br><span class="line">            serial_Init();</span><br><span class="line">            serial_subscriber_ = this-&gt;create_subscription&lt;std_msgs::msg::String&gt;(&quot;serial_msg&quot;, 10, std::bind(&amp;serial_sub_node::command_callback, this, std::placeholders::_1));</span><br><span class="line">        &#125;</span><br><span class="line">    private:</span><br><span class="line">        rclcpp::Subscription&lt;std_msgs::msg::String&gt;::SharedPtr serial_subscriber_;</span><br><span class="line"></span><br><span class="line">        void command_callback(const std_msgs::msg::String::SharedPtr msg)</span><br><span class="line">        &#123;</span><br><span class="line">            ros_ser.write(msg-&gt;data.c_str());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    void serial_Init()</span><br><span class="line">    &#123;</span><br><span class="line"></span><br><span class="line">        /**/</span><br><span class="line"></span><br><span class="line">    &#125; </span><br><span class="line"></span><br><span class="line">        serial::Serial ros_ser;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">int main(int argc, char **argv)</span><br><span class="line">&#123;</span><br><span class="line"></span><br><span class="line">    // auto logger = rclcpp::get_logger(&quot;my_logger&quot;);  </span><br><span class="line"></span><br><span class="line">    rclcpp::init(argc,argv);</span><br><span class="line">    auto node = std::make_shared&lt;serial_sub_node&gt;(&quot;tree_serial_sub_node&quot;);</span><br><span class="line"></span><br><span class="line">    rclcpp::spin(node);</span><br><span class="line"></span><br><span class="line">    rclcpp::shutdown();</span><br><span class="line">    return 0;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置CMakeLists.txt：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">add_executable(myserial_pub src/myserial_pub.cpp)</span><br><span class="line">ament_target_dependencies(myserial_pub rclcpp std_msgs serial)</span><br><span class="line"></span><br><span class="line">add_executable(myserial_sub src/myserial_sub.cpp)</span><br><span class="line">ament_target_dependencies(myserial_sub rclcpp std_msgs serial)</span><br><span class="line"></span><br><span class="line">install(TARGETS</span><br><span class="line">  myserial_pub</span><br><span class="line">  myserial_sub</span><br><span class="line">  DESTINATION lib/$&#123;PROJECT_NAME&#125;)   </span><br></pre></td></tr></table></figure>
+
+<h2 id="工程概述"><a href="#工程概述" class="headerlink" title="工程概述"></a>工程概述</h2><p>在&#x2F;dev&#x2F; 中可以查询设备的ttyUSB* 或ttys*，选择需要的串口即可 </p>
+<p>本例程中使用&#x2F;dev&#x2F;ttyS0</p>
+<p>设置串口相关参数：</p>
+<p>波特率115200，设置超时时间为1000毫秒（1秒），不使用奇偶校验，每个字节包含8位，不使用流控制，每个字节后面有1个停止位；</p>
+<p>功能：</p>
+<p>发布者代码负责从串口读取数据，并通过ROS2话题定时发布数据和消息。</p>
+<p>订阅者代码负责订阅ROS2话题，并将接收到的数据和消息写入串口。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://treex-x.github.io/">TreeX-X</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://treex-x.github.io/2024/01/30/ROS2-NO.2/">https://treex-x.github.io/2024/01/30/ROS2-NO.2/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://TreeX-X.github.io" target="_blank">树码空间</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="/img/Tree.gif" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/01/31/Lider/" title="Lider"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">Lider</div></div></a></div><div class="next-post pull-right"><a href="/2024/01/28/NO-9-Kalman/" title="NO.9 Kalman"><div class="cover" style="background: var(--default-bg-color)"></div><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">NO.9 Kalman</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="/img/Tree.gif" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">TreeX-X</div><div class="author-info__description">稳中求胜🌲</div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">17</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E9%83%A8%E7%BD%B2"><span class="toc-number">1.</span> <span class="toc-text">环境部署</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B0%83%E8%AF%95%E5%B7%A5%E5%85%B7"><span class="toc-number">1.1.</span> <span class="toc-text">调试工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#serial%E5%AE%89%E8%A3%85"><span class="toc-number">1.2.</span> <span class="toc-text">serial安装</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#serial%E4%BD%BF%E7%94%A8"><span class="toc-number">1.3.</span> <span class="toc-text">serial使用</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#ROS-%E5%AE%9E%E7%8E%B0%E4%B8%B2%E5%8F%A3%E6%94%B6%E5%8F%91"><span class="toc-number">2.</span> <span class="toc-text">ROS 实现串口收发</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.</span> <span class="toc-text">代码设计</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B7%A5%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="toc-number">2.2.</span> <span class="toc-text">工程概述</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/01/ROS2-NO.4/" title="ROS2-I2C通信-MPU9250">ROS2-I2C通信-MPU9250</a><time datetime="2024-02-01T09:25:39.224Z" title="发表于 2024-02-01 17:25:39">2024-02-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/01/ROS2-NO.3/" title="ROS2-socket-CAN通信">ROS2-socket-CAN通信</a><time datetime="2024-02-01T09:25:08.824Z" title="发表于 2024-02-01 17:25:08">2024-02-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/01/ROS-NO.3/" title="ROS-I2C通信-MPU9250">ROS-I2C通信-MPU9250</a><time datetime="2024-02-01T09:15:22.268Z" title="发表于 2024-02-01 17:15:22">2024-02-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/01/ROS-NO.4/" title="ROS-socket-CAN通信">ROS-socket-CAN通信</a><time datetime="2024-02-01T09:15:22.268Z" title="发表于 2024-02-01 17:15:22">2024-02-01</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/01/ROS-NO.2/" title="ROS-serial库-串口通信">ROS-serial库-串口通信</a><time datetime="2024-02-01T09:13:10.135Z" title="发表于 2024-02-01 17:13:10">2024-02-01</time></div></div></div></div></div></div></main><footer id="footer" style="background: linear-gradient(20deg, #0062be, #925696, #cc426e, #fb0347)"><div id="footer-wrap"><div class="copyright">&copy;2020 - 2024 By TreeX-X</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=4.12.0"></script><script src="/js/main.js?v=4.12.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.32/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"></div><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-fluttering-ribbon.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
